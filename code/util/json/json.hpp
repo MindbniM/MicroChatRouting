@@ -1,4 +1,5 @@
 #pragma once
+#include<iostream>
 #include<json/json.h>
 #include<memory>
 #include<sstream>
@@ -12,8 +13,8 @@ namespace MindbniM
             Json::StreamWriterBuilder wb;
             std::unique_ptr<Json::StreamWriter> w(wb.newStreamWriter());
             std::stringstream os;
-            bool ret=w->write(root,&os);
-            if(!ret) return false;
+            int ret=w->write(root,&os);
+            if(ret!=0) return false;
             str=os.str();
             return true;
         }
