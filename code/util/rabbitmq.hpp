@@ -7,8 +7,8 @@
 #include"log.hpp"
 namespace MindbniM
 {
-    const static std::string ROUT_DEFAULT;
-    const static std::string TAG_DEFAULT;
+    const static std::string ROUT_DEFAULT="rout_default";
+    const static std::string TAG_DEFAULT="tag_default";
     class MQClient
     {
     public:
@@ -17,10 +17,10 @@ namespace MindbniM
         {
             _loop=EV_DEFAULT;
             _headler=std::make_unique<AMQP::LibEvHandler>(_loop);
-            std::string url="amqp://"+user+":"+password+"@"+"ip";
-            _addr=std::make_unique<AMQP::Address>(url);
-            _con=std::make_unique<AMQP::TcpConnection>(_headler.get(),*_addr);
-            _run=std::move(std::thread([this](){ ev_run(_loop);}));
+            std::string url="amqp://"+user+":"+password+"@"+ip+"/";
+            AMQP::Address addr(url);
+            _con=std::make_unique<AMQP::TcpConnection>(_headler.get(),addr);
+            _channel=std::make_unique<AMQP::TcpChannel>(_con.get());
         }
         ~MQClient()
         {
@@ -33,11 +33,17 @@ namespace MindbniM
         }
         void declareComponents(const std::string& exchange,const std::string& queue,const std::string& routing_key=ROUT_DEFAULT,AMQP::ExchangeType type=AMQP::ExchangeType::direct)
         {
-            _channel->declareExchange(exchange,type).onError([&](const char* message){LOG_ROOT_ERROR<<exchange<<"交换机创建失败";exit(0);}).onSuccess([&](){LOG_ROOT_INFO<<exchange<<"交换机创建成功";});
+            _channel->declareExchange(exchange,type).onError([exchange](const char* message){LOG_ROOT_ERROR<<exchange<<"交换机创建失败";exit(0);}).onSuccess([exchange](){LOG_ROOT_INFO<<exchange<<"交换机创建成功";});
             //声明队列
-            _channel->declareQueue(queue).onError([&](const char* message){LOG_ROOT_ERROR<<queue<<"队列创建失败";exit(0);}).onSuccess([&](){LOG_ROOT_INFO<<queue<<"队列创建成功";});
+            _channel->declareQueue(queue).onError([queue](const char* message){LOG_ROOT_ERROR<<queue<<"队列创建失败";exit(0);}).onSuccess([queue](){LOG_ROOT_INFO<<queue<<"队列创建成功";});
             //绑定交换机和队列
-            _channel->bindQueue(exchange,queue,routing_key).onError([&](const char* message){LOG_ROOT_ERROR<<exchange<<" "<<queue<<"绑定失败";exit(0);}).onSuccess([&](){LOG_ROOT_INFO<<exchange<<" "<<queue<<"绑定成功";});
+            _channel->bindQueue(exchange,queue,routing_key).onError([exchange,queue](const char* message){LOG_ROOT_ERROR<<exchange<<" "<<queue<<"绑定失败";exit(0);}).onSuccess([exchange,queue](){LOG_ROOT_INFO<<exchange<<" "<<queue<<"绑定成功";});
+            _run = std::thread([this]() 
+            { 
+                LOG_ROOT_INFO << "Starting event loop";
+                ev_run(_loop); 
+                LOG_ROOT_INFO << "Event loop stopped";
+            });
         }
         bool publish(const std::string& exchange,const std::string& mess,const std::string& routing_key=ROUT_DEFAULT)
         {
@@ -50,8 +56,9 @@ namespace MindbniM
         }
         void consume(const std::string& queue,const MessageCallBack& callback,const std::string& tag=TAG_DEFAULT)
         {
+            _callback=callback;
             auto call=std::bind(&MQClient::CallBack,this,std::placeholders::_1,std::placeholders::_2,std::placeholders::_3);
-            _channel->consume(queue,tag).onReceived(call).onError([&](const char* message){LOG_ROOT_ERROR<<queue<<"订阅失败";exit(0);}).onSuccess([&](){LOG_ROOT_INFO<<"订阅成功";});
+            _channel->consume(queue,tag).onReceived(call).onError([queue](const char* message){LOG_ROOT_ERROR<<queue<<"订阅失败";exit(0);}).onSuccess([queue](){LOG_ROOT_INFO<<queue<<"订阅成功";});
         }
     private:
         void static WatchCallBack(struct ev_loop* loop,struct ev_async* async,int n)
@@ -67,7 +74,6 @@ namespace MindbniM
         }
         struct ev_loop* _loop;
         std::unique_ptr<AMQP::LibEvHandler> _headler;
-        std::unique_ptr<AMQP::Address> _addr;
         std::unique_ptr<AMQP::TcpConnection>_con;
         std::unique_ptr<AMQP::TcpChannel> _channel;
         MessageCallBack _callback;
