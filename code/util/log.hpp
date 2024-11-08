@@ -664,7 +664,7 @@ namespace MindbniM
 #define LOG_EVENT(logger, str, ...) std::make_shared<LogEvent>(logger, __FILE__, __LINE__, pthread_self(), 0, ::time(nullptr), str, ##__VA_ARGS__)
 
 #define STDOUT_APPEND(level, format) std::make_shared<Stdout_LogAppend>(level, format)
-#define STDOUT_APPEND_DEFAULT(level) std::make_shared<Stdout_LogAppend>(level)
+#define STDOUT_APPEND_DEFAULT() std::make_shared<Stdout_LogAppend>()
 
 #define LOG_ROOT_ADD_STDOUT_APPEND_DEFAULT() LOG_ROOT()->addAppend(STDOUT_APPEND_DEFAULT())
 #define LOG_ROOT_ADD_STDOUT_APPEND(level, format) LOG_ROOT()->addAppend(STDOUT_APPEND(level, format))
