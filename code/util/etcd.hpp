@@ -4,7 +4,7 @@
 #include<etcd/Response.hpp>
 #include<etcd/Value.hpp>
 #include<etcd/Watcher.hpp>
-#include"../log/log.hpp"
+#include"log.hpp"
 namespace MindbniM
 {
     class Registry

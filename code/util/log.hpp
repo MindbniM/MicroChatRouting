@@ -664,7 +664,7 @@ namespace MindbniM
 #define LOG_EVENT(logger, str, ...) std::make_shared<LogEvent>(logger, __FILE__, __LINE__, pthread_self(), 0, ::time(nullptr), str, ##__VA_ARGS__)
 
 #define STDOUT_APPEND(level, format) std::make_shared<Stdout_LogAppend>(level, format)
-#define STDOUT_APPEND_DEFAULT(level) std::make_shared<Stdout_LogAppend>()
+#define STDOUT_APPEND_DEFAULT() std::make_shared<Stdout_LogAppend>()
 
 #define LOG_ROOT_ADD_STDOUT_APPEND_DEFAULT() LOG_ROOT()->addAppend(STDOUT_APPEND_DEFAULT())
 #define LOG_ROOT_ADD_STDOUT_APPEND(level, format) LOG_ROOT()->addAppend(STDOUT_APPEND(level, format))
@@ -672,7 +672,9 @@ namespace MindbniM
 #define LOG_ROOT_ADD_FILEOUT_APPEND(filename, level, format) LOG_ROOT()->addAppend(FILEOUT_APPEND(filename, level, format))
 #define LOG_ADD_STDOUT_APPEND_DEFAULT(name) LOG_NAME(name)->addAppend(STDOUT_APPEND_DEFAULT())
 #define LOG_ADD_STDOUT_APPEND(name, level, format) LOG_NAME(name)->addAppend(STDOUT_APPEND(level, format))
+
 #define CXX_OUT
+
 #ifdef C_OUT
 #define LOG_ROOT_DEBUG(str, ...) LOG_ROOT()->debug(std::make_shared<LogEvent>(LOG_ROOT(), __FILE__, __LINE__, pthread_self(), 0, ::time(nullptr), str, ##__VA_ARGS__))
 #define LOG_ROOT_INFO(str, ...) LOG_ROOT()->info(std::make_shared<LogEvent>(LOG_ROOT(), __FILE__, __LINE__, pthread_self(), 0, ::time(nullptr), str, ##__VA_ARGS__))
