@@ -6,7 +6,7 @@
 能够提供用户操作的实例信息了
 */
 syntax = "proto3";
-package bite_im;
+package MindbniM;
 import "base.proto";
 option cc_generic_services = true;
 message GetSingleFileReq {
