@@ -37,6 +37,10 @@ namespace MindbniM
         using ptr=std::shared_ptr<SpeechServer>;
         SpeechServer(Registry::ptr reg,std::shared_ptr<brpc::Server> rpc):_reg_client(reg),_rpc_server(rpc)
         {}
+        void start()
+        {
+            _rpc_server->RunUntilAskedToQuit();
+        }
     private:
         Registry::ptr _reg_client;
         std::shared_ptr<brpc::Server> _rpc_server;
@@ -49,13 +53,39 @@ namespace MindbniM
             _reg_client=std::make_shared<Registry>(reg_host);
             _reg_client->registry(service_name,service_host);
         }
-        void make_rpc_server()
+        void make_rpc_server(uint16_t port,int timeout,int thread_num)
         {
-
+            _rpc_server=std::make_shared<brpc::Server>();
+            SpeechServiceImpl* speech_service=new SpeechServiceImpl;
+            int ret=_rpc_server->AddService(speech_service,brpc::ServiceOwnership::SERVER_OWNS_SERVICE);
+            if(ret<0)
+            {
+                LOG_ROOT_ERROR<<"添加rpc服务失败";
+                return ;
+            }
+            brpc::ServerOptions op;
+            op.idle_timeout_sec=timeout;
+            op.num_threads=thread_num;
+            ret=_rpc_server->Start(port,&op);
+            if(ret<0)
+            {
+                LOG_ROOT_ERROR<<"rpc服务启动失败";
+                return ;
+            }
         }
         SpeechServer::ptr newSpeechServer()
         {
-
+            if(_reg_client==nullptr)
+            {
+                LOG_ROOT_ERROR<<"未初始化服务注册模块";
+                abort();
+            }
+            if(_rpc_server==nullptr)
+            {
+                LOG_ROOT_ERROR<<"未初始化rpc服务器";
+                abort();
+            }
+            return std::make_shared<SpeechServer>(_reg_client,_rpc_server);
         }
     private:
         Registry::ptr _reg_client;
