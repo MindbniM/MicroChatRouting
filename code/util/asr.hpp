@@ -7,16 +7,15 @@ namespace MindbniM
     class ASRClient
     {
     public:
+        using ptr=std::shared_ptr<ASRClient>;
         ASRClient(const std::string& id,const std::string& aip_key,const std::string& secert_key):_client(id,aip_key,secert_key)
         {}
-        std::string asr(const std::string&file)
+        std::string asr(const std::string&data,std::string& err)
         {
-            std::string file_ctl;
-            aip::get_file_content(file.c_str(),&file_ctl);
-            Json::Value result=_client.recognize(file_ctl,"pcm",16000,aip::null);
+            Json::Value result=_client.recognize(data,"pcm",16000,aip::null);
             if(result["err_no"].asInt()!=0)
             {
-                LOG_ROOT_ERROR<<"语言识别失败"<<result["err_msg"].asString();
+                err=result["err_msg"].asString();
                 return "";
             }
             else return result["result"][0].asString();

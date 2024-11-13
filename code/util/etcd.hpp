@@ -10,6 +10,7 @@ namespace MindbniM
     class Registry
     {
     public:
+        using ptr=std::shared_ptr<Registry>;
         Registry(const std::string& host):_client(std::make_unique<etcd::Client>(host)),_ka(_client->leasekeepalive(3).get()),_lease_id(_ka->Lease())
         {}
         bool registry(const std::string& key,const std::string& value)
