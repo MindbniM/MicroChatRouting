@@ -160,6 +160,11 @@ namespace MindbniM
             static LoggerManager LogMa;
             return &LogMa;
         }
+        void InitRootLog(const std::string& log_append,int level,const std::string& format=DEFAULT_FORMAT)
+        {
+            if(log_append=="stdout")    m_root->addAppend(std::make_shared<Stdout_LogAppend>(level,format));
+            else m_root->addAppend(std::make_shared<Fileout_LogAppend>(log_append,level,format));
+        }
         Logger::ptr get_root() { return m_root; }
         Logger::ptr get_logger(const std::string &name)
         {
