@@ -2,6 +2,7 @@
 #include"log.hpp"
 #include"asr.hpp"
 #include"etcd.hpp"
+#include"speech.pb.h"
 #include<brpc/server.h>
 namespace MindbniM
 {
@@ -12,7 +13,7 @@ namespace MindbniM
         {
             _client=std::make_shared<ASRClient>(getenv("SPEECH_APPID"),getenv("SPEECH_API_KEY"),getenv("SPEECH_SECRET_KEY"));
         }
-        void SpeechRecognition(google::protobuf::RpcController* controller,const SpeechRecognitionReq* request,SpeechRecognitionRsp response,google::protobuf::Closure* done)
+        void SpeechRecognition(google::protobuf::RpcController* controller,const SpeechRecognitionReq* request,SpeechRecognitionRsp* response,google::protobuf::Closure* done)
         {
             brpc::ClosureGuard guard(done);
             std::string err;
