@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(target "SpeechServer")
 set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
 set(ProtoFile "speech.proto")
-#
-set(test "test")
 
 set(SpeechPath ${CMAKE_CURRENT_BINARY_DIR})
 set(Speechpb_h ${SpeechPath}/speech.pb.h )
@@ -30,7 +28,3 @@ set(Src ${CMAKE_CURRENT_SOURCE_DIR}/speech_server.cc ${Speechpb_c})
 
 add_executable(${target} ${Src})
 target_link_libraries(${target} -lgflags  -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
-
-#
-add_executable(${test} test.cc ${Speechpb_c})
-target_link_libraries(${test} -lgflags  -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
