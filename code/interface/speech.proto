@@ -5,20 +5,20 @@
  当服务发现的时候，通过 /service/speech 进行服务发现，就可以发现所有的能够提供用户操作的实例信息了
 */
 syntax = "proto3";
-package bite_im;
+package MindbniM;
 option cc_generic_services = true;
 message SpeechRecognitionReq 
 {
     string request_id = 1;              //请求id
     bytes speech_content = 2;           //语音数据
-    optional string user_id = 3;        //用户id
-    optional string session_id = 4;     //登录会话id
+    string user_id = 3;                 //用户id
+    string session_id = 4;              //登录会话id
 } 
 message SpeechRecognitionRsp 
 {
     string request_id = 1;              //请求id
     bool success = 2;                   //请求处理结果标识
-    optional string errmsg = 3;         //失败原因
+    string errmsg = 3;                  //失败原因
     string recognition_result = 4;      //识别后的文字数据
 } 
 service SpeechService 

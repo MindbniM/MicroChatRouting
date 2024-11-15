@@ -10,6 +10,7 @@ namespace MindbniM
     class Registry
     {
     public:
+        using ptr=std::shared_ptr<Registry>;
         Registry(const std::string& host):_client(std::make_unique<etcd::Client>(host)),_ka(_client->leasekeepalive(3).get()),_lease_id(_ka->Lease())
         {}
         bool registry(const std::string& key,const std::string& value)
@@ -27,11 +28,12 @@ namespace MindbniM
         std::shared_ptr<etcd::KeepAlive> _ka;
         int64_t _lease_id;
     };
-    class Discover
+    class Discovery
     {
     public:
+        using ptr=std::shared_ptr<Discovery>;
         using CallBack=std::function<void(const std::string&,const std::string&)>;
-        Discover(const std::string& host,const CallBack& put=nullptr,const CallBack& del=nullptr):_client(std::make_unique<etcd::Client>(host)),_put(put),_del(del)
+        Discovery(const std::string& host,const CallBack& put=nullptr,const CallBack& del=nullptr):_client(std::make_unique<etcd::Client>(host)),_put(put),_del(del)
         {}
         bool discover(const std::string& dir)
         {
@@ -49,7 +51,7 @@ namespace MindbniM
                     _put(re.key(i),re.value(i).as_string());
                 }
             }
-            _watch=std::make_unique<etcd::Watcher>(*_client,dir,std::bind(&Discover::_CallBack,this,std::placeholders::_1),true);
+            _watch=std::make_unique<etcd::Watcher>(*_client,dir,std::bind(&Discovery::_CallBack,this,std::placeholders::_1),true);
             return true;
         }
         bool wait()
