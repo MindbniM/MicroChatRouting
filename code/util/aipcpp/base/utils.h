@@ -47,16 +47,27 @@ namespace aip {
         }
     }
     
+    struct ToUpper {
+    unsigned char operator()(unsigned char c) const {
+        return std::toupper(c);
+    }
+};
+
+struct ToLower {
+    unsigned char operator()(unsigned char c) const {
+        return std::tolower(c);
+    }
+};
     inline std::string to_upper(std::string src)
     {
-        std::transform(src.begin(), src.end(), src.begin(), toupper);
+        std::transform(src.begin(), src.end(), src.begin(), ToUpper());
         return src;
     }
     
     
     inline std::string to_lower(std::string src)
     {
-        std::transform(src.begin(), src.end(), src.begin(), tolower);
+        std::transform(src.begin(), src.end(), src.begin(), ToLower());
         return src;
     }
     
