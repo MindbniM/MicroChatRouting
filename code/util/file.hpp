@@ -5,7 +5,7 @@ namespace MindbniM
     class File
     {
     public:
-        bool Read(const std::string &filename, std::string &body)
+        bool static Read(const std::string &filename, std::string &body)
         {
             // 实现读取一个文件的所有数据，放入body中
             std::ifstream ifs(filename, std::ios::binary | std::ios::in);
@@ -28,7 +28,7 @@ namespace MindbniM
             ifs.close();
             return true;
         }
-        bool Write(const std::string &filename, const std::string &body)
+        bool static Write(const std::string &filename, const std::string &body)
         {
             // 实现将body中的数据，写入filename对应的文件中
             std::ofstream ofs(filename, std::ios::out | std::ios::binary | std::ios::trunc);
