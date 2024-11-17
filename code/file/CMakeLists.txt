@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 set(target "FileServer")
-#
-set(test "test")
 
 set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
 set(ProtoFile "file.proto")
@@ -37,7 +35,4 @@ link_directories(/usr/local/lib)
 
 add_executable(${target} ${Src})
 target_link_libraries(${target} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
-#
-add_executable(${test} ${CMAKE_CURRENT_SOURCE_DIR}/test.cc ${Filepb_c} ${basepb_c})
-target_link_libraries(${test} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl -lgtest)
 
