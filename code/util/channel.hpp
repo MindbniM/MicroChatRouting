@@ -67,6 +67,7 @@ namespace MindbniM
     class ServiceManager
     {
     public:
+        using ptr=std::shared_ptr<ServiceManager>;
         ChannelPtr choose(const std::string& ServiceName)     
         {
             std::unique_lock<std::mutex> lock(_mutex);
@@ -95,6 +96,7 @@ namespace MindbniM
             {
                 _services[ServiceName]=std::make_shared<ServiceChannel>(ServiceName);
             }
+            LOG_ROOT_DEBUG<<ServiceName<<"服务上线 Host:"<<Host;
             _services[ServiceName]->append(Host);
         }
         void onServiceOffline(const std::string& ServiceInstance,const std::string& Host)
