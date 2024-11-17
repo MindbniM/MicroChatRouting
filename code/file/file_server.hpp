@@ -17,7 +17,7 @@ namespace MindbniM
             mkdir(path.c_str(),0775);
             if(_path.back()!='/') _path.push_back('/');
         }
-        void GetSingleFile(google::protobuf::RpcController *controller, GetSingleFileReq *req, GetSingleFileRsp *rsp, google::protobuf::Closure *done)
+        void GetSingleFile(google::protobuf::RpcController *controller, const GetSingleFileReq *req, GetSingleFileRsp *rsp, google::protobuf::Closure *done)
         {
             brpc::ClosureGuard g(done);
             rsp->set_request_id(req->request_id());
@@ -36,7 +36,7 @@ namespace MindbniM
             data->set_file_id(id);
             data->set_file_content(body);
         }
-        void GetMultiFile(google::protobuf::RpcController *controller, GetMultiFileReq *req, GetMultiFileRsp *rsp, google::protobuf::Closure *done)
+        void GetMultiFile(google::protobuf::RpcController *controller, const GetMultiFileReq *req, GetMultiFileRsp *rsp, google::protobuf::Closure *done)
         {
             brpc::ClosureGuard g(done);
             rsp->set_request_id(req->request_id());
@@ -59,7 +59,7 @@ namespace MindbniM
             }
             rsp->set_success(true);
         }
-        void PutSingleFile(google::protobuf::RpcController *controller, PutSingleFileReq *req, PutSingleFileRsp *rsp, google::protobuf::Closure *done)
+        void PutSingleFile(google::protobuf::RpcController *controller, const PutSingleFileReq *req, PutSingleFileRsp *rsp, google::protobuf::Closure *done)
         {
             brpc::ClosureGuard g(done);
             rsp->set_request_id(req->request_id());
@@ -78,7 +78,7 @@ namespace MindbniM
             data->set_file_size(req->file_data().file_size());
             data->set_file_name(req->file_data().file_name());
         }
-        void PutMultiFile(google::protobuf::RpcController *controller, PutMultiFileReq *req, PutMultiFileRsp *rsp, google::protobuf::Closure *done)
+        void PutMultiFile(google::protobuf::RpcController *controller, const PutMultiFileReq *req, PutMultiFileRsp *rsp, google::protobuf::Closure *done)
         {
             brpc::ClosureGuard g(done);
             rsp->set_request_id(req->request_id());
@@ -127,11 +127,11 @@ namespace MindbniM
             _reg_client = std::make_shared<Registry>(reg_host);
             _reg_client->registry(service_name, service_host);
         }
-        void make_rpc_server(uint16_t port, int timeout, int thread_num,const std::string& path="./data/")
+        void make_rpc_server(int port, int timeout, int thread_num,const std::string& path="./data/")
         {
             _rpc_server = std::make_shared<brpc::Server>();
-            FileServiceImpl *speech_service = new FileServiceImpl(path);
-            int ret = _rpc_server->AddService(speech_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);
+            FileServiceImpl *file_service = new FileServiceImpl(path);
+            int ret = _rpc_server->AddService(file_service, brpc::ServiceOwnership::SERVER_OWNS_SERVICE);
             if (ret < 0)
             {
                 LOG_ROOT_ERROR << "添加rpc服务失败";
