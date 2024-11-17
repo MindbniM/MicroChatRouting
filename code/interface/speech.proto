@@ -11,15 +11,15 @@ message SpeechRecognitionReq
 {
     string request_id = 1;              //请求id
     bytes speech_content = 2;           //语音数据
-    string user_id = 3;                 //用户id
-    string session_id = 4;              //登录会话id
+    optional string user_id = 3;                 //用户id
+    optional string session_id = 4;              //登录会话id
 } 
 message SpeechRecognitionRsp 
 {
     string request_id = 1;              //请求id
     bool success = 2;                   //请求处理结果标识
-    string errmsg = 3;                  //失败原因
-    string recognition_result = 4;      //识别后的文字数据
+    optional string errmsg = 3;                  //失败原因
+    optional string recognition_result = 4;      //识别后的文字数据
 } 
 service SpeechService 
 {

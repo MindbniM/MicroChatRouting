@@ -21,6 +21,7 @@ namespace MindbniM
                 LOG_ROOT_ERROR<<"服务注册失败"<<":"<<re.error_message();
                 return false;
             }
+            LOG_ROOT_DEBUG<<"服务注册:"<<key<<" : "<<value;
             return true;
         }
     private:

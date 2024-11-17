@@ -3,6 +3,7 @@ project(Speech_Server)
 
 set(CMAKE_CXX_STANDARD 17)
 
+
 set(target "SpeechServer")
 set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
 set(ProtoFile "speech.proto")
@@ -26,5 +27,8 @@ endif()
 
 set(Src ${CMAKE_CURRENT_SOURCE_DIR}/speech_server.cc ${Speechpb_c})
 
+link_directories(/usr/local/lib)
+
 add_executable(${target} ${Src})
-target_link_libraries(${target} -lgflags  -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
+target_link_libraries(${target} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
+
