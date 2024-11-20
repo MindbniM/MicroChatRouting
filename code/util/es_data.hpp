@@ -6,6 +6,7 @@ namespace MindbniM
     class ESUser
     {
     public:
+        using ptr=std::shared_ptr<ESUser>;
         ESUser(const std::vector<std::string>& hosts={"http://127.0.0.1:9200/"}):_client(hosts)
         {}
         ESUser(const std::shared_ptr<elasticlient::Client>& client):_client(client)

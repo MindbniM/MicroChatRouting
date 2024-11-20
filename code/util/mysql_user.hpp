@@ -1,7 +1,6 @@
 #pragma once
 #include <odb/query.hxx>
 #include "odb.hpp"
-#include "user.hxx"
 #include "user-odb.hxx"
 #include<odb/core.hxx>
 #include <odb/result.hxx>
