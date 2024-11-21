@@ -50,7 +50,7 @@ namespace MindbniM
         Status(std::shared_ptr<sw::redis::Redis> redis):_redis(redis){}
         std::string get(const std::string& uid)
         {
-            return _redis->get(uid).value();
+            return _redis->get(uid).value_or("");
         }
         void append(const std::string& uid,const std::string& status="default")
         {
