@@ -36,9 +36,9 @@ namespace MindbniM
         {
             _redis->del(ssid);
         }
-        sw::redis::OptionalString get(const std::string& ssid)
+        std::string  get(const std::string& ssid)
         {
-            return _redis->get(ssid);
+            return _redis->get(ssid).value_or("");
         }
     private:
         std::shared_ptr<sw::redis::Redis> _redis;
@@ -48,6 +48,10 @@ namespace MindbniM
     public:
         using ptr=std::shared_ptr<Status>;
         Status(std::shared_ptr<sw::redis::Redis> redis):_redis(redis){}
+        std::string get(const std::string& uid)
+        {
+            return _redis->get(uid).value();
+        }
         void append(const std::string& uid,const std::string& status="default")
         {
             _redis->set(uid,status);
@@ -76,9 +80,9 @@ namespace MindbniM
         {
             _redis->del(uid);
         }
-        sw::redis::OptionalString get(const std::string& uid)
+        std::string  get(const std::string& uid)
         {
-            return _redis->get(uid);
+            return _redis->get(uid).value_or("");
         }
     private:
         std::shared_ptr<sw::redis::Redis> _redis;
