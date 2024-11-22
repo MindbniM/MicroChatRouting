@@ -5,10 +5,11 @@ namespace MindbniM
     class DMSClient
     {
     public:
+        using ptr=std::shared_ptr<DMSClient>;
         DMSClient()
         {
             Py_Initialize();
-            PyRun_SimpleString("import sys; sys.path.append('/home/mindbnim/MicroChatRouting/code/util')");
+            PyRun_SimpleString("import sys; sys.path.append('/home/mindbnim/MicroChatRouting/code/util/')");
             _pModule=PyImport_ImportModule("dms");
             if(_pModule==nullptr)
             {
@@ -49,7 +50,6 @@ namespace MindbniM
             if (pResult) 
             {
                 result=PyUnicode_AsUTF8(pResult);
-                Py_DECREF(pResult);
                 Py_DECREF(pResult);
             }
             else

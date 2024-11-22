@@ -19,6 +19,7 @@ namespace MindbniM
         }
         void GetSingleFile(google::protobuf::RpcController *controller, const GetSingleFileReq *req, GetSingleFileRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG<<"获取单个文件请求";
             brpc::ClosureGuard g(done);
             rsp->set_request_id(req->request_id());
             std::string id=req->file_id();
@@ -61,10 +62,12 @@ namespace MindbniM
         }
         void PutSingleFile(google::protobuf::RpcController *controller, const PutSingleFileReq *req, PutSingleFileRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG<<"上传单个文件请求";
             brpc::ClosureGuard g(done);
             rsp->set_request_id(req->request_id());
             std::string id=UUID::Get();
             std::string filename=_path+id;
+            LOG_ROOT_DEBUG<<"文件内容"<<req->file_data().file_content();
             int flag=File::Write(filename,req->file_data().file_content());
             if(flag==false)
             {

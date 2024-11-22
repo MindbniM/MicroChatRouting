@@ -150,6 +150,8 @@ namespace MindbniM
         using SearchValue=__svalue__;
         ESClient(const std::vector<std::string>& hosts={"http://127.0.0.1:9200/"}):_client(std::make_unique<elasticlient::Client>(hosts))
         {}
+        ESClient(const std::shared_ptr<elasticlient::Client>& client):_client(client)
+        {}
         bool Create(const CreateValue& cv)
         {
             std::string body=cv.get();
@@ -254,6 +256,6 @@ namespace MindbniM
             return json_res["hits"]["hits"];
         }
     private:
-        std::unique_ptr<elasticlient::Client> _client;
+        std::shared_ptr<elasticlient::Client> _client;
     };
 }
