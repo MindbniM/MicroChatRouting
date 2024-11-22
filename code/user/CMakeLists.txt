@@ -17,7 +17,7 @@ set(Userpb_c ${UserPath}/user.pb.cc)
 set(basepb_h ${UserPath}/base.pb.h)
 set(basepb_c ${UserPath}/base.pb.cc)
 set(Filepb_h ${UserPath}/file.pb.h)
-set(Filepb_c ${UserPath}/file.pb.c)
+set(Filepb_c ${UserPath}/file.pb.cc)
 
 set(User_odb ${CMAKE_CURRENT_SOURCE_DIR}/../odb/user.hxx)
 set(odbPath ${CMAKE_CURRENT_BINARY_DIR})
@@ -50,7 +50,7 @@ if(NOT EXISTS ${User_odb_h} OR NOT EXISTS ${User_odb_c} OR NOT EXISTS ${User_odb
     )
 endif()
 
-set(Src ${CMAKE_CURRENT_SOURCE_DIR}/user_server.cc ${Userpb_c} ${basepb_c} ${User_odb_c})
+set(Src ${CMAKE_CURRENT_SOURCE_DIR}/user_server.cc ${Userpb_c} ${basepb_c} ${User_odb_c} ${Filepb_c})
 
 link_directories(/usr/local/lib)
 

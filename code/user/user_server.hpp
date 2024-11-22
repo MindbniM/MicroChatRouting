@@ -17,30 +17,23 @@ namespace MindbniM
     {
     public:
         UserServiceImpl(std::shared_ptr<odb::mysql::database> mysql, std::shared_ptr<sw::redis::Redis> redis,
-                        std::shared_ptr<elasticlient::Client> es, ServiceManager::ptr _service_manager, DMSClient::ptr dms)
+                        std::shared_ptr<elasticlient::Client> es, ServiceManager::ptr service_manager, DMSClient::ptr dms)
         {
-            _usertable = std::make_shared<UserTable>(std::shared_ptr<odb::mysql::database>());
+            _usertable = std::make_shared<UserTable>(mysql);
             _esuser = std::make_shared<ESUser>(es);
             _session = std::make_shared<Session>(redis);
             _status = std::make_shared<Status>(redis);
             _codes = std::make_shared<Codes>(redis);
-            _service_manager = _service_manager;
+            _service_manager = service_manager;
             _dms = dms;
         }
 
     private:
         bool nickname_check(const std::string &nickname)
         {
-            if (nickname.size() < 3 || nickname.size() > 15)
+            if (nickname.size() < 1 || nickname.size() > 100)
             {
                 return false;
-            }
-            for (auto &c : nickname)
-            {
-                if (!isalnum(c) && c != '-' && c != '_')
-                {
-                    return false;
-                }
             }
             return true;
         }
@@ -59,6 +52,7 @@ namespace MindbniM
                 if (!isdigit(c))
                     return false;
             }
+            return true;
         }
         int code_create()
         {
@@ -70,8 +64,9 @@ namespace MindbniM
 
     public:
         // 用户名注册
-        void UserRegisterReq(google::protobuf::RpcController *controller, const UserRegisterReq *req, UserRegisterRsp *rsp, google::protobuf::Closure *done)
+        void UserRegister(google::protobuf::RpcController *controller, const UserRegisterReq *req, UserRegisterRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "用户注册请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -116,6 +111,7 @@ namespace MindbniM
         // 用户名登录
         void UserLogin(google::protobuf::RpcController *controller, const UserLoginReq *req, UserLoginRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "用户名登录请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -137,6 +133,7 @@ namespace MindbniM
                 // status中 uid->status可互相拿到
                 std::string ssid = _status->get(user->_user_id);
                 _session->remove(ssid);
+                _status->remove(user->_user_id);
             }
             // 4. 构造会话 ID，生成会话键值对，向 redis 中添加会话信息以及登录标记信息
             std::string ssid = UUID::Get();
@@ -150,6 +147,7 @@ namespace MindbniM
         // 获取手机号验证码
         void GetPhoneVerifyCode(google::protobuf::RpcController *controller, const PhoneVerifyCodeReq *req, PhoneVerifyCodeRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "获取手机号验证码请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -178,6 +176,7 @@ namespace MindbniM
         // 手机号注册
         void PhoneRegister(google::protobuf::RpcController *controller, const PhoneRegisterReq *req, PhoneRegisterRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "手机号注册请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -222,6 +221,7 @@ namespace MindbniM
         // 手机号登录(可扩展用户不存在就注册)
         void PhoneLogin(google::protobuf::RpcController *controller, const PhoneLoginReq *req, PhoneLoginRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "手机号登录请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -249,6 +249,7 @@ namespace MindbniM
             {
                 std::string ssid = _status->get(user->_user_id);
                 _session->remove(ssid);
+                _status->remove(user->_user_id);
             }
             // 6. 构造会话 ID，生成会话键值对，向 redis 中添加会话信息以及登录标记信息
             std::string ssid = UUID::Get();
@@ -262,6 +263,7 @@ namespace MindbniM
         // 获取当前登录用户信息
         void GetUserInfo(google::protobuf::RpcController *controller, const GetUserInfoReq *req, GetUserInfoRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "获取用户信息请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -309,6 +311,7 @@ namespace MindbniM
         // 获取多个用户信息
         void GetMultiUserInfo(google::protobuf::RpcController *controller, const GetMultiUserInfoReq *req, GetMultiUserInfoRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "获取多个用户信息请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -359,6 +362,7 @@ namespace MindbniM
         // 设置用户头像
         void SetUserAvatar(google::protobuf::RpcController *controller, const SetUserAvatarReq *req, SetUserAvatarRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "设置用户头像请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -385,6 +389,7 @@ namespace MindbniM
             if(!ret) return errctl("上传头像失败");
             //4. 将返回的头像文件 ID 更新到数据库中
             p->_avatar_id=file_id;
+            LOG_ROOT_DEBUG<<"获得头像文件id:"<<file_id;
             ret=_usertable->update(p);
             if(!ret)
             {
@@ -405,6 +410,7 @@ namespace MindbniM
         // 设置用户昵称
         void SetUserNickname(google::protobuf::RpcController *controller, const SetUserNicknameReq *req, SetUserNicknameRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "设置用户昵称请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -443,6 +449,7 @@ namespace MindbniM
         // 设置用户描述
         void SetUserDescription(google::protobuf::RpcController *controller, const SetUserDescriptionReq *req, SetUserDescriptionRsp *rsp, google::protobuf::Closure *done)
         {
+            LOG_ROOT_DEBUG << "设置用户描述请求";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -526,7 +533,7 @@ namespace MindbniM
         Codes::ptr _codes;
 
         ServiceManager::ptr _service_manager;
-        const std::string FileService = "file_service";
+        const std::string FileService = "/service/file_service";
 
         DMSClient::ptr _dms;
     };
@@ -565,8 +572,8 @@ namespace MindbniM
             _service_manager->add_concern(dis_dir);
             auto put_cb = std::bind(&ServiceManager::onServiceOnline, _service_manager.get(), std::placeholders::_1, std::placeholders::_2);
             auto del_cb = std::bind(&ServiceManager::onServiceOffline, _service_manager.get(), std::placeholders::_1, std::placeholders::_2);
-            Discovery::ptr dclient = std::make_shared<Discovery>(dis_host, put_cb, del_cb);
-            dclient->discover(dis_dir);
+            _discover= std::make_shared<Discovery>(dis_host, put_cb, del_cb);
+            _discover->discover(dis_dir);
         }
         void make_mysql_object(const std::string &host, int port, const std::string &user, const std::string &passwd, const std::string &db, const std::string &set, int poll_count)
         {
