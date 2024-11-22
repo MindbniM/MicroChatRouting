@@ -27,7 +27,7 @@ namespace MindbniM
                 LOG_ROOT_ERROR<<"文件服务器请求失败 err:"<<cntl.ErrorText();
                 return false;
             }
-            if(rsp.success())
+            if(!rsp.success())
             {
                 LOG_ROOT_ERROR<<"文件服务器请求失败 err:"<<rsp.errmsg();
                 return false;
@@ -83,7 +83,7 @@ namespace MindbniM
             }
             for(auto& id:file_ids)
             {
-                file_contents.emplace_back(rsp.mutable_file_data()->at(id));
+                file_contents.emplace_back(rsp.mutable_file_data()->at(id).file_content());
             }
             return true;
         }
