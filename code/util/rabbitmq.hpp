@@ -12,6 +12,7 @@ namespace MindbniM
     class MQClient
     {
     public:
+        using ptr=std::shared_ptr<MQClient>;
         using MessageCallBack=std::function<void(const std::string&)>;
         MQClient(const std::string& user,const std::string& password,const std::string& ip)
         {
