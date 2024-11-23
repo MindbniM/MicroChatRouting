@@ -12,6 +12,7 @@ namespace MindbniM
     class MQClient
     {
     public:
+        using ptr=std::shared_ptr<MQClient>;
         using MessageCallBack=std::function<void(const std::string&)>;
         MQClient(const std::string& user,const std::string& password,const std::string& ip)
         {
@@ -33,7 +34,7 @@ namespace MindbniM
         }
         void declareComponents(const std::string& exchange,const std::string& queue,const std::string& routing_key=ROUT_DEFAULT,AMQP::ExchangeType type=AMQP::ExchangeType::direct)
         {
-            _channel->declareExchange(exchange,type).onError([exchange](const char* message){LOG_ROOT_ERROR<<exchange<<"交换机创建失败";exit(0);}).onSuccess([exchange](){LOG_ROOT_INFO<<exchange<<"交换机创建成功";});
+            _channel->declareExchange(exchange,type).onError([exchange](const char* message){LOG_ROOT_ERROR<<exchange<<"交换机创建失败 "<<message;exit(0);}).onSuccess([exchange](){LOG_ROOT_INFO<<exchange<<"交换机创建成功";});
             //声明队列
             _channel->declareQueue(queue).onError([queue](const char* message){LOG_ROOT_ERROR<<queue<<"队列创建失败";exit(0);}).onSuccess([queue](){LOG_ROOT_INFO<<queue<<"队列创建成功";});
             //绑定交换机和队列
