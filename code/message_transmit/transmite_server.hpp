@@ -52,6 +52,7 @@ namespace MindbniM
             message.mutable_sender()->CopyFrom(user);
             message.mutable_message()->CopyFrom(req->message());
             //获取所有会话成员
+            LOG_ROOT_DEBUG<<"获取会话成员 sid:"<<chat_session_id;
             std::vector<ChatSessionMember> users=_odb->get_members(chat_session_id);
             if(users.empty())
             {
@@ -70,7 +71,7 @@ namespace MindbniM
             }
         }
     private:
-        const std::string _UserServiceName;
+        const std::string _UserServiceName="/service/user_service";
         ServiceManager::ptr _service_manager;
         ChatSessionMemberTable::ptr _odb;
         MQClient::ptr _mq;
