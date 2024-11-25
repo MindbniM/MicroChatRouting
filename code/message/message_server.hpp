@@ -26,14 +26,310 @@ namespace MindbniM
         void GetHistoryMsg(google::protobuf::RpcController* controller,const GetHistoryMsgReq* request,GetHistoryMsgRsp* response,google::protobuf::Closure* done)
         {
             brpc::ClosureGuard guard(done);
+            auto errctl=[request,response](const std::string& err)
+            {
+                response->set_request_id(request->request_id());
+                response->set_errmsg(err);
+            };
+            //1. 提取请求中的关键要素：请求ID，会话ID, 时间范围
+            std::string ssid=request->chat_session_id();
+            boost::posix_time::ptime stime=boost::posix_time::from_time_t(request->start_time());
+            boost::posix_time::ptime etime=boost::posix_time::from_time_t(request->over_time());
+            //2. 从数据库，获取最近的消息元信息
+            std::vector<Message> msg_lists=_mysql->get_message(ssid,stime,etime);
+            if(msg_lists.empty())
+            {
+                response->set_request_id(request->request_id());
+                response->set_success(true);
+                return ;
+            }
+            //3. 统计所有消息中文件类型消息的文件ID列表和用户ID列表
+            std::unordered_set<std::string> file_id_lists;
+            std::unordered_set<std::string> user_id_lists; 
+            for (const auto &msg : msg_lists) 
+            {
+                if (msg.file_id().empty()) continue;
+                LOG_ROOT_DEBUG<<"需要下载的文件ID: "<<msg.file_id();
+                file_id_lists.insert(msg.file_id());
+                user_id_lists.insert(msg.user_id());
+            }
+            //4. 从文件存储子服务中批量下载文件
+            std::vector<std::string> file_ids(file_id_lists.begin(), file_id_lists.end());
+            std::shared_ptr<brpc::Channel> channel = _service_manager->choose(_file_service_name);
+            if(channel==nullptr)
+            {
+                LOG_ROOT_ERROR<<"文件存储子服务未找到";
+                errctl("文件存储子服务未找到");
+                return ;
+            }
+            FileServiceClient file_client(channel);
+            std::vector<std::string> file_contents;
+            bool ret=file_client.GetMultiFile(file_ids,file_contents);
+            if(!ret)
+            {
+                LOG_ROOT_ERROR<<"文件下载失败";
+                errctl("文件下载失败");
+                return ;
+            }
+            std::unordered_map<std::string, std::string> file_data_lists;
+            for(int i=0;i<file_ids.size();i++)
+            {
+                file_data_lists[file_ids[i]]=file_contents[i];
+            }
+            //5. 从用户子服务进行批量用户信息获取
+            std::vector<std::string> user_ids(user_id_lists.begin(), user_id_lists.end());
+            channel = _service_manager->choose(_user_service_name);
+            if(channel==nullptr)
+            {
+                LOG_ROOT_ERROR<<"用户子服务未找到";
+                return errctl("用户子服务未找到");
+            }
+            UserServiceClient user_client(channel);
+            std::vector<UserInfo> user_infos;
+            ret=user_client.GetMultiUserInfo(user_ids,user_infos);
+            if(!ret)
+            {
+                LOG_ROOT_ERROR<<"用户信息获取失败";
+                return errctl("用户信息获取失败");
+            }
+            std::unordered_map<std::string, UserInfo> user_lists;
+            for(int i=0;i<user_ids.size();i++)
+            {
+                user_lists[user_ids[i]]=user_infos[i];
+            }
+
+            //6. 组织响应
+            response->set_request_id(request->request_id());
+            response->set_success(true);
+            for (const auto &msg : msg_lists) 
+            {
+                auto message_info = response->add_msg_list();
+                message_info->set_message_id(msg.message_id());
+                message_info->set_chat_session_id(msg.session_id());
+                message_info->set_timestamp(boost::posix_time::to_time_t(msg.create_time()));
+                message_info->mutable_sender()->CopyFrom(user_lists[msg.user_id()]);
+                switch(msg.message_type()) 
+                {
+                    case MessageType::STRING:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::STRING);
+                        message_info->mutable_message()->mutable_string_message()->set_content(msg.content());
+                        break;
+                    }
+                    case MessageType::IMAGE:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::IMAGE);
+                        message_info->mutable_message()->mutable_image_message()->set_file_id(msg.file_id());
+                        message_info->mutable_message()->mutable_image_message()->set_image_content(file_data_lists[msg.file_id()]);
+                        break;
+                    }
+                    case MessageType::FILE:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::FILE);
+                        message_info->mutable_message()->mutable_file_message()->set_file_id(msg.file_id());
+                        message_info->mutable_message()->mutable_file_message()->set_file_size(msg.file_size());
+                        message_info->mutable_message()->mutable_file_message()->set_file_name(msg.file_name());
+                        message_info->mutable_message()->mutable_file_message()->set_file_contents(file_data_lists[msg.file_id()]);
+                        break;
+                    }
+                    case MessageType::SPEECH:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::SPEECH);
+                        message_info->mutable_message()->mutable_speech_message()->set_file_id(msg.file_id());
+                        message_info->mutable_message()->mutable_speech_message()->set_file_contents(file_data_lists[msg.file_id()]);
+                        break;
+                    }
+                    default:
+                    {
+                        LOG_ERROR("消息类型错误！！");
+                        return;
+                    }
+                }
+            }
         }
         void GetRecentMsg(google::protobuf::RpcController* controller,const GetRecentMsgReq* request,GetRecentMsgRsp* response,google::protobuf::Closure* done)
         {
             brpc::ClosureGuard guard(done);
+            auto errctl=[request,response](const std::string& err)
+            {
+                response->set_request_id(request->request_id());
+                response->set_errmsg(err);
+            };
+            //1. 提取请求中的关键要素：请求ID，会话ID, 消息数量
+            std::string ssid=request->chat_session_id();
+            int count=request->msg_count();
+            //2. 从数据库，获取最近的消息元信息
+            std::vector<Message> msg_lists=_mysql->get_message(ssid,count);
+            if(msg_lists.empty())
+            {
+                response->set_request_id(request->request_id());
+                response->set_success(true);
+                return ;
+            }
+            //3. 统计所有消息中文件类型消息的文件ID列表和用户ID列表
+            std::unordered_set<std::string> file_id_lists;
+            std::unordered_set<std::string> user_id_lists; 
+            for (const auto &msg : msg_lists) 
+            {
+                if (msg.file_id().empty()) continue;
+                LOG_ROOT_DEBUG<<"需要下载的文件ID: "<<msg.file_id();
+                file_id_lists.insert(msg.file_id());
+                user_id_lists.insert(msg.user_id());
+            }
+            //4. 从文件存储子服务中批量下载文件
+            std::vector<std::string> file_ids(file_id_lists.begin(), file_id_lists.end());
+            std::shared_ptr<brpc::Channel> channel = _service_manager->choose(_file_service_name);
+            if(channel==nullptr)
+            {
+                LOG_ROOT_ERROR<<"文件存储子服务未找到";
+                errctl("文件存储子服务未找到");
+                return ;
+            }
+            FileServiceClient file_client(channel);
+            std::vector<std::string> file_contents;
+            bool ret=file_client.GetMultiFile(file_ids,file_contents);
+            if(!ret)
+            {
+                LOG_ROOT_ERROR<<"文件下载失败";
+                errctl("文件下载失败");
+                return ;
+            }
+            std::unordered_map<std::string, std::string> file_data_lists;
+            for(int i=0;i<file_ids.size();i++)
+            {
+                file_data_lists[file_ids[i]]=file_contents[i];
+            }
+            //5. 从用户子服务进行批量用户信息获取
+            std::vector<std::string> user_ids(user_id_lists.begin(), user_id_lists.end());
+            channel = _service_manager->choose(_user_service_name);
+            if(channel==nullptr)
+            {
+                LOG_ROOT_ERROR<<"用户子服务未找到";
+                return errctl("用户子服务未找到");
+            }
+            UserServiceClient user_client(channel);
+            std::vector<UserInfo> user_infos;
+            ret=user_client.GetMultiUserInfo(user_ids,user_infos);
+            if(!ret)
+            {
+                LOG_ROOT_ERROR<<"用户信息获取失败";
+                return errctl("用户信息获取失败");
+            }
+            std::unordered_map<std::string, UserInfo> user_lists;
+            for(int i=0;i<user_ids.size();i++)
+            {
+                user_lists[user_ids[i]]=user_infos[i];
+            }
+
+            //6. 组织响应
+            response->set_request_id(request->request_id());
+            response->set_success(true);
+            for (const auto &msg : msg_lists) 
+            {
+                auto message_info = response->add_msg_list();
+                message_info->set_message_id(msg.message_id());
+                message_info->set_chat_session_id(msg.session_id());
+                message_info->set_timestamp(boost::posix_time::to_time_t(msg.create_time()));
+                message_info->mutable_sender()->CopyFrom(user_lists[msg.user_id()]);
+                switch(msg.message_type()) 
+                {
+                    case MessageType::STRING:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::STRING);
+                        message_info->mutable_message()->mutable_string_message()->set_content(msg.content());
+                        break;
+                    }
+                    case MessageType::IMAGE:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::IMAGE);
+                        message_info->mutable_message()->mutable_image_message()->set_file_id(msg.file_id());
+                        message_info->mutable_message()->mutable_image_message()->set_image_content(file_data_lists[msg.file_id()]);
+                        break;
+                    }
+                    case MessageType::FILE:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::FILE);
+                        message_info->mutable_message()->mutable_file_message()->set_file_id(msg.file_id());
+                        message_info->mutable_message()->mutable_file_message()->set_file_size(msg.file_size());
+                        message_info->mutable_message()->mutable_file_message()->set_file_name(msg.file_name());
+                        message_info->mutable_message()->mutable_file_message()->set_file_contents(file_data_lists[msg.file_id()]);
+                        break;
+                    }
+                    case MessageType::SPEECH:
+                    {
+                        message_info->mutable_message()->set_message_type(MessageType::SPEECH);
+                        message_info->mutable_message()->mutable_speech_message()->set_file_id(msg.file_id());
+                        message_info->mutable_message()->mutable_speech_message()->set_file_contents(file_data_lists[msg.file_id()]);
+                        break;
+                    }
+                    default:
+                    {
+                        LOG_ERROR("消息类型错误！！");
+                        return;
+                    }
+                }
+            }
         }
         void MsgSearch(google::protobuf::RpcController* controller,const MsgSearchReq* request,MsgSearchRsp* response,google::protobuf::Closure* done)
         {
             brpc::ClosureGuard guard(done);
+            auto errctl=[request,response](const std::string& err)
+            {
+                response->set_request_id(request->request_id());
+                response->set_errmsg(err);
+            };
+            //1. 提取请求中的关键要素：请求ID，会话ID, 搜索关键字
+            std::string ssid=request->chat_session_id();
+            std::string key=request->search_key();
+            //2. 从es获取最近的消息元信息
+            std::vector<Message> msg_lists=_es->Search(key,ssid);
+            if(msg_lists.empty())
+            {
+                response->set_request_id(request->request_id());
+                response->set_success(true);
+                return ;
+            }
+            //3. 统计所有消息中用户ID列表
+            std::unordered_set<std::string> user_id_lists; 
+            for (const auto &msg : msg_lists) 
+            {
+                user_id_lists.insert(msg.user_id());
+            }
+            //4. 从用户子服务进行批量用户信息获取
+            std::vector<std::string> user_ids(user_id_lists.begin(), user_id_lists.end());
+            std::shared_ptr<brpc::Channel> channel = _service_manager->choose(_user_service_name);
+            if(channel==nullptr)
+            {
+                LOG_ROOT_ERROR<<"用户子服务未找到";
+                return errctl("用户子服务未找到");
+            }
+            UserServiceClient user_client(channel);
+            std::vector<UserInfo> user_infos;
+            bool ret=user_client.GetMultiUserInfo(user_ids,user_infos);
+            if(!ret)
+            {
+                LOG_ROOT_ERROR<<"用户信息获取失败";
+                return errctl("用户信息获取失败");
+            }
+            std::unordered_map<std::string, UserInfo> user_lists;
+            for(int i=0;i<user_ids.size();i++)
+            {
+                user_lists[user_ids[i]]=user_infos[i];
+            }
+
+            //5. 组织响应
+            response->set_request_id(request->request_id());
+            response->set_success(true);
+            for (const auto &msg : msg_lists) 
+            {
+                auto message_info = response->add_msg_list();
+                message_info->set_message_id(msg.message_id());
+                message_info->set_chat_session_id(msg.session_id());
+                message_info->set_timestamp(boost::posix_time::to_time_t(msg.create_time()));
+                message_info->mutable_sender()->CopyFrom(user_lists[msg.user_id()]);
+                message_info->mutable_message()->set_message_type(MessageType::STRING);
+                message_info->mutable_message()->mutable_string_message()->set_content(msg.content());
+            }
         }
     private:
         //消息队列有消息到了的回调函数
@@ -42,7 +338,7 @@ namespace MindbniM
         //1. 取出序列化的消息内容，进行反序列化
         std::string content(body,sz);
         MessageInfo message;
-        int ret=message.ParseFromString(content);
+        bool ret=message.ParseFromString(content);
         if(!ret)
         {
             LOG_ROOT_ERROR<<"消息反序列化失败";
@@ -65,7 +361,7 @@ namespace MindbniM
             case MessageType::STRING:
             {
                 msg._content = message.message().string_message().content();
-                bool ret=_es->insert(msg);
+                bool ret=_es->Insert(msg);
                 if(!ret)
                 {
                     LOG_ROOT_ERROR<<"es搜索引擎插入失败";
@@ -75,7 +371,7 @@ namespace MindbniM
             }
             case MessageType::IMAGE:
             {
-                msg._content = message.image_message().image_content();
+                msg._content = message.message().image_message().image_content();
                 bool ret=client.PutSingleFile(" ",msg.content(),file_id);
                 if (!ret) 
                 {
@@ -86,8 +382,8 @@ namespace MindbniM
             }
             case MessageType::FILE:
             {
-                msg._content = message.file_message().file_contents();
-                file_name=message.file_message().file_name();
+                msg._content = message.message().file_message().file_contents();
+                file_name=message.message().file_message().file_name();
                 bool ret=client.PutSingleFile(file_name,msg.content(),file_id);
                 if (!ret) 
                 {
@@ -98,7 +394,7 @@ namespace MindbniM
             }
             case MessageType::SPEECH:
             {
-                msg._content = message.speech_message().file_contents();
+                msg._content = message.message().speech_message().file_contents();
                 bool ret=client.PutSingleFile(" ",msg.content(),file_id);
                 if (!ret) 
                 {
@@ -113,11 +409,11 @@ namespace MindbniM
                 return ;
             }
         }
-        msg.file_id(file_id);
-        msg.file_name(file_name);
-        msg.file_size(msg.content().size());
+        msg._file_id=file_id;
+        msg._file_name=file_name;
+        msg._file_size=msg.content().size();
         //3. 将消息存储到mysql中
-        bool ret=_mysql->insert(msg);
+        ret=_mysql->insert(msg);
         if(!ret)
         {
             LOG_ROOT_ERROR<<"mysql存储失败";
