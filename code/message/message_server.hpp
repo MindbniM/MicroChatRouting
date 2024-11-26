@@ -331,12 +331,13 @@ namespace MindbniM
                 message_info->mutable_message()->mutable_string_message()->set_content(msg.content());
             }
         }
-    private:
+    public:
         //消息队列有消息到了的回调函数
-        void onMessage(const char* body,int sz)
+        void onMessage(const std::string& content)
         {
         //1. 取出序列化的消息内容，进行反序列化
-        std::string content(body,sz);
+        LOG_ROOT_DEBUG<<"消息队列有消息到来";
+        LOG_ROOT_DEBUG<<content;
         MessageInfo message;
         bool ret=message.ParseFromString(content);
         if(!ret)
@@ -501,6 +502,8 @@ namespace MindbniM
                 LOG_ROOT_ERROR<<"rpc服务启动失败";
                 return ;
             }
+            auto  cb = std::bind(&MessageServiceImpl::onMessage, message_service, std::placeholders::_1);
+            _mq->consume(_routing_key, cb);
         }
         void make_dis_object(const std::string &dis_host, const std::vector<std::string>& dis_dir)
         {
@@ -510,8 +513,7 @@ namespace MindbniM
             auto put_cb = std::bind(&ServiceManager::onServiceOnline, _service_manager.get(), std::placeholders::_1, std::placeholders::_2);
             auto del_cb = std::bind(&ServiceManager::onServiceOffline, _service_manager.get(), std::placeholders::_1, std::placeholders::_2);
             _discover= std::make_shared<Discovery>(dis_host, put_cb, del_cb);
-            for(auto& dir:dis_dir)
-                _discover->discover(dir);
+            _discover->discover(dis_dir[0]);
         }
         void make_mq_object(const std::string& user,const std::string& password,const std::string& ip, const std::string& exchange_name ,const std::string& queue_name,const std::string& routing_key)
         {
@@ -535,7 +537,8 @@ namespace MindbniM
                 LOG_ROOT_ERROR<<"未初始化rpc服务器";
                 abort();
             }
-            return std::make_shared<MessageServer>(_reg_client,_rpc_server);
+            MessageServer::ptr ret = std::make_shared<MessageServer>(_reg_client,_rpc_server);
+            return  ret;
         }
     private:
         Registry::ptr _reg_client;
