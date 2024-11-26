@@ -20,6 +20,7 @@ namespace MindbniM
         }
         void GetTransmitTarget(google::protobuf::RpcController* controller,const NewMessageReq* req,GetTransmitTargetRsp* rsp,google::protobuf::Closure* done)
         {
+            LOG_ROOT_DEBUG<<"消息转发";
             brpc::ClosureGuard guard(done);
             auto errctl = [req, rsp](const std::string &err) -> void
             {
@@ -60,7 +61,7 @@ namespace MindbniM
                 return errctl("获取会话成员失败");
             }
             // 将封装完毕的消息，发布到消息队列，待消息存储子服务进行消息持久化
-            ret=_mq->publish(_exchange_name,_routing_key,message.SerializeAsString());
+            ret=_mq->publish(_exchange_name,message.SerializeAsString(),_routing_key);
             //返回响应
             rsp->set_request_id(req->request_id());
             rsp->set_success(true);
