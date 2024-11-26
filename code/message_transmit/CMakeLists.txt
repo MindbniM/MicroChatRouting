@@ -29,6 +29,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../util)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../odb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../client)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mysql)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../es)
 
 if(NOT EXISTS ${Transmitepb_h} OR NOT EXISTS ${Transmitepb_c} OR NOT EXISTS ${Basepb_h} OR NOT EXISTS ${Basepb_c} OR NOT EXISTS ${Userpb_h} OR NOT EXISTS ${Userpb_c})
     add_custom_command(

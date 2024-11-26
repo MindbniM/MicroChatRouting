@@ -29,6 +29,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../util)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../odb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../client)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mysql)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../es)
 include_directories(/usr/include/python3.8)
 
 if(NOT EXISTS ${Userpb_h} OR NOT EXISTS ${Userpb_c} OR NOT EXISTS ${basepb_h} OR NOT EXISTS ${basepb_c} OR NOT EXISTS ${Filepb_h} OR NOT EXISTS ${Filepb_c})
