@@ -35,8 +35,8 @@ namespace MindbniM
             try
             {
                 odb::transaction t(_odb->begin());
-                _odb->erase<ChatSession>(odb::query<ChatSession>::chat_session_id == ssid);
-                _odb->erase<ChatSessionMember>(odb::query<ChatSessionMember>::session_id == ssid);
+                _odb->erase_query<ChatSession>(odb::query<ChatSession>::chat_session_id == ssid);
+                _odb->erase_query<ChatSessionMember>(odb::query<ChatSessionMember>::session_id == ssid);
                 t.commit();
             }
             catch (const std::exception &e)
@@ -51,10 +51,10 @@ namespace MindbniM
             try 
             {
                 odb::transaction t(_odb->begin());
-                odb::result<SingleChatSession> res = _odb->query_one<SingleChatSession>(
-                    odb::query<SingleChatSession>::csm1::user_id == uid && 
+                std::shared_ptr<SingleChatSession> res;
+                res.reset(_odb->query_one<SingleChatSession>( odb::query<SingleChatSession>::csm1::user_id == uid && 
                     odb::query<SingleChatSession>::csm2::user_id == pid && 
-                    odb::query<SingleChatSession>::css::chat_session_type == ChatSessionType::SINGLE);
+                    odb::query<SingleChatSession>::css::chat_session_type == ChatSessionType::SINGLE));
 
                 std::string cssid = res->chat_session_id;
                 _odb->erase_query<ChatSession>(odb::query<ChatSession>::chat_session_id == cssid);
@@ -75,7 +75,7 @@ namespace MindbniM
             try
             {
                 odb::transaction t(_odb->begin());
-                ret=_odb->query_one<ChatSession>(odb::query<ChatSession>::chat_session_id == ssid);
+                ret.reset(_odb->query_one<ChatSession>(odb::query<ChatSession>::chat_session_id == ssid));
                 t.commit();
             }
             catch (const std::exception &e)

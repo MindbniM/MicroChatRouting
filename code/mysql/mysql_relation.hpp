@@ -37,8 +37,8 @@ namespace MindbniM
             try
             {
                 odb::transaction t(_odb->begin());
-                _odb->erase<Relation>(odb::query<Relation>::user_id == uid1 && odb::query<Relation>::peer_id == uid2);
-                _odb->erase<Relation>(odb::query<Relation>::user_id == uid2 && odb::query<Relation>::peer_id == uid1);
+                _odb->erase_query<Relation>(odb::query<Relation>::user_id == uid1 && odb::query<Relation>::peer_id == uid2);
+                _odb->erase_query<Relation>(odb::query<Relation>::user_id == uid2 && odb::query<Relation>::peer_id == uid1);
                 t.commit();
             }
             catch (const std::exception &e)
@@ -73,7 +73,7 @@ namespace MindbniM
             try
             {
                 odb::transaction t(_odb->begin());
-                std::vector<odb::result<Relation>> r=_odb->query<Relation>(odb::query<Relation>::user_id == uid);
+                odb::result<Relation> r=_odb->query<Relation>(odb::query<Relation>::user_id == uid);
                 for(auto& i:r)
                 {
                     ret.emplace_back(i.peer_id());

@@ -30,5 +30,4 @@ namespace MindbniM
 #pragma db type("varchar(64)")
         std::string _peer_id;
     };
-    // odb -d mysql --std c++11 --generate-query --generate-schema --profile boost/date-time person.hxx
 }
