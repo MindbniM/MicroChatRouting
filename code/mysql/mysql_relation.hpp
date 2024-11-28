@@ -51,11 +51,12 @@ namespace MindbniM
         //判断是否存在关系
         bool exist(const std::string& uid1,const std::string& uid2)
         {
-            odb::result<Relation> r;
+            bool ret=false;
             try
             {
                 odb::transaction t(_odb->begin());
-                r=_odb->query_one<Relation>(odb::query<Relation>::user_id == uid1 && odb::query<Relation>::peer_id == uid2);
+                odb::result<Relation> r=_odb->query<Relation>(odb::query<Relation>::user_id == uid1 && odb::query<Relation>::peer_id == uid2);
+                ret=!r.empty();
                 t.commit();
             }
             catch (const std::exception &e)
@@ -63,9 +64,9 @@ namespace MindbniM
                 LOG_ROOT_ERROR << "查询关系失败: " << e.what();
                 return false;
             }
-            return !r.empty();
+            return ret;
         }
-        //获取好友列表
+        //获取好友ID列表
         std::vector<std::string> get_friends(const std::string& uid)
         {
             std::vector<std::string> ret;
