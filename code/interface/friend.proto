@@ -49,14 +49,12 @@ message FriendAddRsp
     string request_id = 1;
     bool success = 2;
     string errmsg = 3; 
-    string notify_event_id = 4;//通知事件id
 }
 //--------------------------------------
 //好友申请的处理
 message FriendAddProcessReq 
 {
     string request_id = 1;
-    string notify_event_id = 2;//通知事件id
     bool agree = 3;//是否同意好友申请
     string apply_user_id = 4; //申请人的用户id
     optional string session_id = 5;
@@ -80,17 +78,12 @@ message GetPendingFriendEventListReq
     optional string user_id = 3;
 }
 
-message FriendEvent 
-{
-    optional string event_id = 1;
-    UserInfo sender = 3;
-}
 message GetPendingFriendEventListRsp 
 {
     string request_id = 1;
     bool success = 2;
     string errmsg = 3; 
-    repeated FriendEvent event = 4;
+    repeated UserInfo sender = 4;
 }
 
 //--------------------------------------
