@@ -1,34 +1,46 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.20)
-project(Speech_Server)
+project(User_Server)
 
 set(CMAKE_CXX_STANDARD 17)
 
-
 set(target "SpeechServer")
-set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
-set(ProtoFile "speech.proto")
 
-set(SpeechPath ${CMAKE_CURRENT_BINARY_DIR})
-set(Speechpb_h ${SpeechPath}/speech.pb.h )
-set(Speechpb_c ${SpeechPath}/speech.pb.cc)
+set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
+set(PROFILES "speech.proto")
+
+set(OutPath ${CMAKE_CURRENT_SOURCE_DIR}/../temp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../util)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../temp)
 
-if(NOT EXISTS ${Speechpb_h} OR NOT EXISTS ${Speechpb_c})
-    add_custom_command(
-        OUTPUT ${Speechpb_c} ${Speechpb_h}
-        COMMAND protoc
-        ARGS --proto_path=${ProtoPath} --cpp_out=${CMAKE_CURRENT_BINARY_DIR}  ${ProtoFile}
-        DEPENDS ${ProtoPath}/${ProtoFile}
-        COMMENT "生成Protobuf框架代码文件:" ${Speechpb_h} ${Speechpb_c}
-    )
-endif()
+set(PROCC "")
+function(CreateProto ProPath ProFile OutPath)
+    get_filename_component(BASENAME ${ProFile} NAME_WE)
+    set(Propb_h ${OutPath}/${BASENAME}.pb.h)
+    set(Propb_c ${OutPath}/${BASENAME}.pb.cc)
+    set(Pro ${ProPath}/${ProFile})
+    if(NOT EXISTS ${Propb_h} OR NOT EXISTS ${Propb_c})
+        add_custom_command(
+            OUTPUT ${Propb_h} ${Propb_c}
+            COMMAND protoc
+            ARGS --proto_path=${ProPath} --cpp_out=${OutPath}  ${ProFile}
+            DEPENDS ${Pro}
+            COMMENT "生成Protobuf框架代码文件:" ${Propb_h} ${Propb_c}
+        )
+    endif()
+    list(APPEND PROCC ${Propb_c})
+    set(PROCC ${PROCC} PARENT_SCOPE)
+endfunction()
 
-set(Src ${CMAKE_CURRENT_SOURCE_DIR}/speech_server.cc ${Speechpb_c})
+foreach(PROFILE ${PROFILES})
+    CreateProto(${ProtoPath} ${PROFILE} ${OutPath})
+endforeach()
+
+set(Src ${PROCC} ) 
+file(GLOB _Src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+list(APPEND Src ${_Src})
 
 link_directories(/usr/local/lib)
 
 add_executable(${target} ${Src})
 target_link_libraries(${target} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
-
