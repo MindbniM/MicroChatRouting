@@ -5,7 +5,7 @@
 #include "user.pb.h"
 #include "base.pb.h"
 #include <brpc/server.h>
-#include "es_data.hpp"
+#include "es_user.hpp"
 #include "mysql_user.hpp"
 #include "redis_data.hpp"
 #include "dms.hpp"
@@ -566,7 +566,7 @@ namespace MindbniM
             _reg_client = std::make_shared<Registry>(reg_host);
             _reg_client->registry(service_name, service_host);
         }
-        void make_dis_object(const std::string &dis_host, const std::string dis_dir)
+        void make_dis_object(const std::string &dis_host, const std::string& dis_dir)
         {
             _service_manager = std::make_shared<ServiceManager>();
             _service_manager->add_concern(dis_dir);
