@@ -45,9 +45,9 @@ SERVICE HTTP PATH:
 */
 syntax = "proto3";
 package MindbniM;
-import "base.proto";
 option cc_generic_services = true;
-message ClientAuthenticationReq {
+message ClientAuthenticationReq 
+{
     string request_id = 1;
     string session_id = 2;
 }
