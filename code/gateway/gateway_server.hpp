@@ -1,11 +1,5 @@
 #pragma once
 #include"service.h"
-#include"redis_data.hpp"
-#include"etcd.hpp"
-#include"channel.hpp"
-#include"connection.hpp"
-#include"httplib.h"
-#include"gateway.pb.h"
 namespace MindbniM
 {
     class GatewayServer
@@ -15,10 +9,19 @@ namespace MindbniM
         GatewayServer(int websocket_port,int http_port,std::shared_ptr<sw::redis::Redis> redis,ServiceManager::ptr sm);
         void start();
     private:
-        void Errorctl(httplib::Response& response,auto req)
+        void Errorctl(httplib::Response& response,auto& rsp, const std::string& error)
         {
-            
+            rsp->set_success(false);
+            rsp->set_errmsg(error);
+            response.set_content(rsp->SerializeAsString(),"application/x-protbuf");
         }
+
+
+        //各个处理都这样
+        //1.  取出http请求正文，将正文进行反序列化
+        //1.5 进行用户鉴权(optional)
+        //2.  进行rpc调用
+        //3.  将调用结构序列化到http响应
     private:
     //websocket回调处理
         //websocket服务器连接建立回调

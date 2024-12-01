@@ -1,4 +1,18 @@
 #pragma once
+#include"redis_data.hpp"
+#include"etcd.hpp"
+#include"channel.hpp"
+#include"connection.hpp"
+#include"httplib.h"
+#include"gateway.pb.h"
+#include"speech.pb.h"
+#include"file.pb.h"
+#include"user_service_client.hpp"
+#include"transmite.pb.h"
+#include"message.pb.h"
+#include"friend.pb.h"
+#include"notify.pb.h"
+
 #define GET_PHONE_VERIFY_CODE "/service/user/get_phone_verify_code"             //获取短信验证码
 #define USERNAME_REGISTER "/service/user/username_register"                     //用户名密码注册
 #define USERNAME_LOGIN "/service/user/username_login"                           //用户名密码登录
@@ -29,9 +43,9 @@
 #define PUT_MULTI_FILE "/service/file/put_multi_file"                           //发送多个文件
 #define RECOGNITION "/service/speech/recognition"                               //语音转文字
 
-#define USER_SERVICE "/service/user_service"
-#define FRIEND_SERVICE "/service/friend_service"
-#define FILE_SERVICE "/service/file_service"
-#define MESSAGE_SERVICE "/service/message_storage"
-#define SPEECH_SERVICE "/service/speech_service"
-#define TRANSMIT_SERVICE "/service/transmite_service" 
+#define USER_SERVICE "/service/user_service"                                    //用户管理子服务名
+#define FRIEND_SERVICE "/service/friend_service"                                //好友管理子服务名 
+#define FILE_SERVICE "/service/file_service"                                    //文件存储子服务名
+#define MESSAGE_SERVICE "/service/message_storage"                              //消息存储子服务名
+#define SPEECH_SERVICE "/service/speech_service"                                //语音识别子服务名
+#define TRANSMIT_SERVICE "/service/transmite_service"                           //消息转发子服务名
