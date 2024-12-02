@@ -1,75 +1,82 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.20)
-project(Message_Server)
+project(User_Server)
 
 set(CMAKE_CXX_STANDARD 17)
-
 
 set(target "MessageServer")
 
 set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
-set(MessagePro "message.proto")
-set(BasePro "base.proto")
-set(UserPro "user.proto")
-set(FilePro "file.proto")
+set(PROFILES "base.proto" "user.proto" "file.proto" "message.proto")
 
-set(MessagePath ${CMAKE_CURRENT_BINARY_DIR})
-set(Messagepb_h ${MessagePath}/message.pb.h )
-set(Messagepb_c ${MessagePath}/message.pb.cc)
-set(Basepb_h ${MessagePath}/base.pb.h)
-set(Basepb_c ${MessagePath}/base.pb.cc)
-set(Userpb_h ${MessagePath}/user.pb.h)
-set(Userpb_c ${MessagePath}/user.pb.cc)
-set(Filepb_h ${MessagePath}/file.pb.h)
-set(Filepb_c ${MessagePath}/file.pb.cc)
+set(OdbPath ${CMAKE_CURRENT_SOURCE_DIR}/../odb)
+set(ODBFIES "message.hxx")
 
-set(Message_odb ${CMAKE_CURRENT_SOURCE_DIR}/../odb/message.hxx)
-set(odbPath ${CMAKE_CURRENT_BINARY_DIR})
-set(Message_odb_h ${odbPath}/message-odb.hxx)
-set(Message_odb_c ${odbPath}/message-odb.cxx)
-set(Message_odb_i ${odbPath}/message-odb.ixx)
+
+set(OutPath ${CMAKE_CURRENT_SOURCE_DIR}/../temp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../util)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../odb)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../client)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../mysql)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../es)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../temp)
 
-function(CreateProto Pro Propb_h Propb_c)
+set(PROCC "")
+function(CreateProto ProPath ProFile OutPath)
+    get_filename_component(BASENAME ${ProFile} NAME_WE)
+    set(Propb_h ${OutPath}/${BASENAME}.pb.h)
+    set(Propb_c ${OutPath}/${BASENAME}.pb.cc)
+    set(Pro ${ProPath}/${ProFile})
     if(NOT EXISTS ${Propb_h} OR NOT EXISTS ${Propb_c})
         add_custom_command(
             OUTPUT ${Propb_h} ${Propb_c}
             COMMAND protoc
-            ARGS --proto_path=${ProtoPath} --cpp_out=${CMAKE_CURRENT_BINARY_DIR}  ${Pro}
-            DEPENDS ${ProtoPath}/${Pro}
+            ARGS --proto_path=${ProPath} --cpp_out=${OutPath}  ${ProFile}
+            DEPENDS ${Pro}
             COMMENT "生成Protobuf框架代码文件:" ${Propb_h} ${Propb_c}
         )
     endif()
+    list(APPEND PROCC ${Propb_c})
+    set(PROCC ${PROCC} PARENT_SCOPE)
 endfunction()
-function(CreateOdb Odb Odb_h Odb_c Odb_i)
+
+set(ODBCC "")
+function(CreateOdb OdbPath OdbFile OutPath)
+    get_filename_component(BASENAME ${OdbFile} NAME_WE)
+    set(Odb_h ${OutPath}/${BASENAME}-odb.hxx)
+    set(Odb_c ${OutPath}/${BASENAME}-odb.cxx)
+    set(Odb_i ${OutPath}/${BASENAME}-odb.ixx)
+    set(Odb ${OdbPath}/${OdbFile})
+    
     if(NOT EXISTS ${Odb_h} OR NOT EXISTS ${Odb_c} OR NOT EXISTS ${Odb_i})
         add_custom_command(
+            COMMAND echo "Generating Odb files for ${OdbFile}"  # 调试信息
             OUTPUT ${Odb_h} ${Odb_c} ${Odb_i}
             COMMAND odb
-            ARGS --database mysql --std c++17 --generate-query --generate-schema --profile boost/date-time ${Odb}
+            ARGS --database mysql --std c++17 --generate-query --generate-schema --profile boost/date-time --output-dir ${OutPath} ${Odb}
             DEPENDS ${Odb}
             COMMENT "生成ODB框架代码文件:" ${Odb_h} ${Odb_c} ${Odb_i}
         )
     endif()
+
+    list(APPEND ODBCC ${Odb_c})
+    set(ODBCC ${ODBCC} PARENT_SCOPE)
 endfunction()
 
-CreateProto(${MessagePro} ${Messagepb_h} ${Messagepb_c})
-CreateProto(${BasePro} ${Basepb_h} ${Basepb_c})
-CreateProto(${UserPro} ${Userpb_h} ${Userpb_c})
-CreateProto(${FilePro} ${Filepb_h} ${Filepb_c})
+foreach(PROFILE ${PROFILES})
+    CreateProto(${ProtoPath} ${PROFILE} ${OutPath})
+endforeach()
 
-CreateOdb(${Message_odb} ${Message_odb_h} ${Message_odb_c} ${Message_odb_i})
+foreach(ODBFILE ${ODBFIES})
+    CreateOdb(${OdbPath} ${ODBFILE} ${OutPath})
+endforeach()
 
-set(Src ${CMAKE_CURRENT_SOURCE_DIR}/message_server.cc ${Messagepb_c} ${Basepb_c} ${Message_odb_c} ${Userpb_c} ${Filepb_c}) 
+set(Src ${PROCC} ${ODBCC}) 
+file(GLOB _Src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+list(APPEND Src ${_Src})
 
 link_directories(/usr/local/lib)
 
 add_executable(${target} ${Src})
 target_link_libraries(${target}  -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lelasticlient
     -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl -lodb-mysql -lodb -lodb-boost -lamqpcpp -lev -lgflags)
-

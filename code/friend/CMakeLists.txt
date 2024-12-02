@@ -53,7 +53,7 @@ function(CreateOdb OdbPath OdbFile OutPath)
             COMMAND echo "Generating Odb files for ${OdbFile}"  # 调试信息
             OUTPUT ${Odb_h} ${Odb_c} ${Odb_i}
             COMMAND odb
-            ARGS --database mysql --std c++17 --generate-query --generate-schema --profile boost/date-time ${Odb}
+            ARGS --database mysql --std c++17 --generate-query --generate-schema --profile boost/date-time --output-dir ${OutPath} ${Odb}
             DEPENDS ${Odb}
             COMMENT "生成ODB框架代码文件:" ${Odb_h} ${Odb_c} ${Odb_i}
         )
