@@ -3,14 +3,16 @@ project(User_Server)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(target "SpeechServer")
+set(target "GatwayServer")
 
 set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
-set(PROFILES "speech.proto")
+set(PROFILES "base.proto" "user.proto" "file.proto" "friend.proto" "message.proto" "speech.proto" "transmite.proto" "gateway.proto" "notify.proto")
+
 
 set(OutPath ${CMAKE_CURRENT_SOURCE_DIR}/../temp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../util)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../client)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../temp)
 
 set(PROCC "")
@@ -32,15 +34,17 @@ function(CreateProto ProPath ProFile OutPath)
     set(PROCC ${PROCC} PARENT_SCOPE)
 endfunction()
 
+
 foreach(PROFILE ${PROFILES})
     CreateProto(${ProtoPath} ${PROFILE} ${OutPath})
 endforeach()
 
-set(Src ${PROCC} ) 
+set(Src ${PROCC}) 
 file(GLOB _Src ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 list(APPEND Src ${_Src})
 
 link_directories(/usr/local/lib)
 
 add_executable(${target} ${Src})
-target_link_libraries(${target} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl -ljsoncpp -lpthread -ldl)
+target_link_libraries(${target} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api 
+    -lodb-mysql -lodb -lodb-boost -lhiredis -lredis++ -lcpprest -lcurl -lpthread -lboost_system -ldl)
