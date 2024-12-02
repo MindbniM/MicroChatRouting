@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(target "GatwayServer")
 
 set(ProtoPath ${CMAKE_CURRENT_SOURCE_DIR}/../interface)
-set(PROFILES "base.proto" "user.proto" "file.proto" "friend.proto" "message.proto" "speech.proto" "transmite.proto" "getway.proto")
+set(PROFILES "base.proto" "user.proto" "file.proto" "friend.proto" "message.proto" "speech.proto" "transmite.proto" "gateway.proto" "notify.proto")
 
 
 set(OutPath ${CMAKE_CURRENT_SOURCE_DIR}/../temp)
@@ -46,4 +46,5 @@ list(APPEND Src ${_Src})
 link_directories(/usr/local/lib)
 
 add_executable(${target} ${Src})
-#
+target_link_libraries(${target} -lgflags -lbrpc /usr/lib/libssl.so /usr/lib/libcrypto.so -lprotobuf -lleveldb -letcd-cpp-api 
+    -lodb-mysql -lodb -lodb-boost -lhiredis -lredis++ -lcpprest -lcurl -lpthread -lboost_system -ldl)
