@@ -71,10 +71,12 @@ namespace MindbniM
             {
                 if(ev.event_type()==etcd::Event::EventType::PUT)
                 {
+                    if(_put) _put(ev.kv().key(),ev.kv().as_string());
                     LOG_ROOT_INFO<<"新增服务: "<<ev.kv().key()<<" : "<<ev.kv().as_string();
                 }
                 if(ev.event_type()==etcd::Event::EventType::DELETE_)
                 {
+                    if(_del) _del(ev.prev_kv().key(),ev.prev_kv().as_string());
                     LOG_ROOT_INFO<<"服务下线: "<<ev.prev_kv().key()<<" : "<<ev.prev_kv().as_string();
                 }
             }
