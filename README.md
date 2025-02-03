@@ -1,2 +1,2 @@
 # MicroChatRouting
-基于QT的微服务聊天室
+微服务聊天室(服务端)
